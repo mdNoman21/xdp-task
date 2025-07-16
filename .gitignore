@@ -1,0 +1,7 @@
+# Ignore Go binaries
+cmd/main
+cmd/main.exe
+
+# Ignore OS-specific files
+.DS_Store
+Thumbs.db 
