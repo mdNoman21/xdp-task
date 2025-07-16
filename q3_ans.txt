@@ -1,0 +1,25 @@
+What’s happening with `make(chan func(), 10)`?
+-----------------------------------------------
+- This line creates a channel that carries functions — essentially, a queue for sending functions to be executed later.
+- The `10` means the channel can buffer up to 10 functions at a time without blocking the sender.
+- Think of it as a task queue that can hold up to 10 jobs.
+
+What about the `for` loop with 4 iterations?
+--------------------------------------------
+- The loop launches 4 goroutines, i.e., 4 workers running in parallel.
+- Each worker waits in a loop, pulling functions from the task queue (the channel) and executing them one by one.
+- This is a classic **worker pool** pattern, allowing you to process multiple jobs concurrently.
+
+Why isn’t “HERE1” printing?
+---------------------------
+- After setting up the workers, the program sends a function into the channel (which prints "HERE1").
+- Immediately after, the main function prints "Hello".
+- The problem: the program exits right after printing "Hello", before the workers get a chance to run the function that prints "HERE1".
+- Because Go’s scheduler hasn’t yet run those worker goroutines, and the program ends, we never see "HERE1".
+
+How to fix that?
+----------------
+To ensure the workers finish their jobs before the program exits, you can:
+- Add synchronization (e.g., a `sync.WaitGroup`) to wait for workers to finish.
+- Or, simply add a short `sleep` after sending the job, giving workers time to run.
+- Or, close the channel and have workers exit gracefully once all jobs are done.
