@@ -1,9 +1,6 @@
-#include <linux/bpf.h>
-#include <linux/if_ether.h>
-#include <linux/ip.h>
-#include <linux/tcp.h>
+#include "vmlinux.h"
 #include <bpf/bpf_helpers.h>
-#include <netinet/in.h> 
+#include <bpf/bpf_endian.h>
 
 
 struct {
@@ -19,28 +16,31 @@ int tcp_drop_port(struct xdp_md *ctx) {
     void *data = (void *)(long)ctx->data;
 
     struct ethhdr *eth = data;
-    if (eth + 1 > data_end)
+    if ((void *)(eth + 1) > data_end)
         return XDP_PASS;
 
     struct iphdr *ip = data + sizeof(struct ethhdr);
-    if (ip + 1 > data_end)
+    if ((void *)(ip + 1) > data_end)
         return XDP_PASS;
 
     if (ip->protocol != IPPROTO_TCP)
         return XDP_PASS;
 
-    struct tcphdr *tcp = (struct tcphdr *)(ip + 1);
-    if (tcp + 1 > data_end)
+    // IP header can have variable length: use ip->ihl
+    struct tcphdr *tcp = (void *)ip + ip->ihl * 4;
+    if ((void *)(tcp + 1) > data_end)
         return XDP_PASS;
 
-    unsigned short *port;
-    port = bpf_map_lookup_elem(&tcp_port_map, 0);
+    int key = 0;
+    unsigned short *port = bpf_map_lookup_elem(&tcp_port_map, &key);
     if (!port)
         return XDP_PASS;
 
-    if (tcp->dest == *port)
+    // tcp->dest is in network byte order
+    if (tcp->dest == bpf_htons(*port))
         return XDP_DROP;
 
     return XDP_PASS;
 }
+
 char _license[] SEC("license") = "GPL";

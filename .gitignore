@@ -1,7 +1,30 @@
-# Ignore Go binaries
+# Ignore Go binaries and build/test outputs
 cmd/main
 cmd/main.exe
+*.exe
+*.test
+*.out
 
-# Ignore OS-specific files
+# eBPF object files
+*.o
+
+# eBPF generated headers
+vmlinux.h
+
+# OS-specific files
 .DS_Store
-Thumbs.db 
+Thumbs.db
+
+# Editor/IDE files
+.vscode/
+.idea/
+*~
+*.swp
+
+# Logs and backup files
+*.log
+*.bak
+tags
+
+# Vendor directory (if used)
+vendor/ 
